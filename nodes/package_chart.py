@@ -115,7 +115,8 @@ class PackageYARGChart:
         Returns:
             Tuple of (output_folder_path, song_ini_content)
         """
-        import torchaudio
+        import soundfile as sf
+        import numpy as np
         
         # Sanitize folder name
         safe_name = self._sanitize_filename(f"{artist} - {song_name}")
@@ -131,6 +132,24 @@ class PackageYARGChart:
         
         # Track which stems are included
         stems_included = []
+        
+        # Helper to save audio with soundfile
+        def save_audio_ogg(filepath: str, audio_dict: dict):
+            """Save audio dict to OGG using soundfile"""
+            wav = audio_dict["waveform"].squeeze()  # Remove batch dim
+            sr = audio_dict["sample_rate"]
+            
+            # Convert to numpy
+            if hasattr(wav, 'cpu'):
+                wav = wav.cpu().numpy()
+            
+            # Ensure shape is [samples, channels] for soundfile
+            if wav.ndim == 1:
+                wav = wav.reshape(-1, 1)  # Mono
+            elif wav.shape[0] in [1, 2]:
+                wav = wav.T  # [channels, samples] -> [samples, channels]
+            
+            sf.write(filepath, wav, sr, format='OGG', subtype='VORBIS')
         
         # Build song.ini
         song_ini = self._build_song_ini(
@@ -157,12 +176,7 @@ class PackageYARGChart:
         
         # Save main audio as OGG
         audio_path = os.path.join(folder_path, "song.ogg")
-        torchaudio.save(
-            audio_path,
-            audio["waveform"].squeeze(0),  # Remove batch dim
-            audio["sample_rate"],
-            format="ogg",
-        )
+        save_audio_ogg(audio_path, audio)
         
         # Save stems if provided and requested
         if include_stems:
@@ -178,12 +192,7 @@ class PackageYARGChart:
             for filename, stem_audio in stems.items():
                 if stem_audio is not None:
                     stem_path = os.path.join(folder_path, filename)
-                    torchaudio.save(
-                        stem_path,
-                        stem_audio["waveform"].squeeze(0),
-                        stem_audio["sample_rate"],
-                        format="ogg",
-                    )
+                    save_audio_ogg(stem_path, stem_audio)
                     stems_included.append(filename)
                     print(f"[Drums2Chart] Saved stem: {filename}")
         
