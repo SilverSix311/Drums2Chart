@@ -11,24 +11,40 @@ Input a song → Output a complete YARG-ready drum chart package
 ## 🔧 Pipeline
 
 ```
+┌───────────────┐
+│ LoadDrumModel │─────────────────────────────────┐
+└───────────────┘                                 │
+                                                  ▼
 ┌─────────────┐    ┌──────────────┐    ┌────────────────┐    ┌─────────────┐    ┌──────────────┐
 │ LoadAudio/  │───►│ AudioSepara- │───►│ DrumTranscribe │───►│ MIDIToChart │───►│ PackageChart │
-│ LoadVideo   │    │ teDemucs     │    │ (ADTOF/etc)    │    │             │    │              │
+│ LoadVideo   │    │ teDemucs     │    │                │    │             │    │              │
 └─────────────┘    └──────────────┘    └────────────────┘    └─────────────┘    └──────────────┘
      Input              Stems              MIDI                 .chart            YARG Package
 ```
 
+### Model Loading Pattern
+
+Just like SDXL checkpoints - load once, use many times:
+
+```
+LoadDrumModel ──► model ──┬──► DrumTranscribe (song 1)
+                         ├──► DrumTranscribe (song 2)
+                         └──► DrumTranscribe (song 3)
+```
+
 ## 📦 Nodes
 
-### Core Nodes (To Build)
+### Drums2Chart Nodes
 
 | Node | Description | Status |
 |------|-------------|--------|
-| `DrumTranscribe` | AI drum transcription → MIDI | 🔴 TODO |
-| `MIDIToChart` | Convert MIDI to .chart format | 🔴 TODO |
-| `PackageYARGChart` | Bundle chart + audio + metadata | 🔴 TODO |
+| `LoadDrumModel` | Load transcription model (like checkpoint loading) | ✅ Structure done |
+| `UnloadDrumModel` | Free model from VRAM | ✅ Done |
+| `DrumTranscribe` | AI drum transcription → MIDI | 🟡 Model integration pending |
+| `MIDIToChart` | Convert MIDI to .chart format | ✅ Core logic done |
+| `PackageYARGChart` | Bundle chart + audio + metadata | ✅ Core logic done |
 
-### Existing Nodes (Dependencies)
+### Compatible Nodes (Dependencies)
 
 | Node | Source | Purpose |
 |------|--------|---------|
