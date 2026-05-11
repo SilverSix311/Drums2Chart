@@ -202,25 +202,37 @@ class LoadDrumModel:
     
     def _load_adtof(self, path: str, device: str, precision: str) -> Tuple[Any, Dict]:
         """Load ADTOF model"""
-        # TODO: Implement actual ADTOF loading
-        # Reference: https://github.com/MZehren/ADTOF
+        from ..utils.adtof_integration import load_adtof_model
         
-        # For now, return placeholder
-        config = {
-            "sample_rate": 44100,
-            "hop_length": 512,
-            "instruments": ["kick", "snare", "hihat", "tom", "cymbal"],
-        }
-        
-        # Actual loading would be:
-        # model = torch.load(path, map_location=device)
-        # if precision == "fp16":
-        #     model = model.half()
-        # model.eval()
-        
-        model = {"_placeholder": True, "type": "adtof", "path": path}
-        
-        return model, config
+        try:
+            result = load_adtof_model(weights_path=path, device=device)
+            model_obj = result["model"]
+            config = result["config"]
+            
+            # Apply precision
+            if precision == "fp16" and device == "cuda":
+                model_obj = model_obj.half()
+            # bf16 requires specific GPU support
+            # elif precision == "bf16":
+            #     model_obj = model_obj.to(torch.bfloat16)
+            
+            return model_obj, config
+            
+        except ImportError as e:
+            # ADTOF not installed - return placeholder with error
+            print(f"[Drums2Chart] ADTOF not available: {e}")
+            print("[Drums2Chart] Install with: pip install adtof-pytorch")
+            
+            config = {
+                "sample_rate": 44100,
+                "fps": 100,
+                "instruments": ["kick", "snare", "hihat", "tom", "cymbal"],
+                "_error": str(e),
+            }
+            
+            model = {"_placeholder": True, "type": "adtof", "path": path, "_error": str(e)}
+            
+            return model, config
     
     def _load_omnizart(self, path: str, device: str, precision: str) -> Tuple[Any, Dict]:
         """Load Omnizart model"""

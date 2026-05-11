@@ -158,28 +158,40 @@ class DrumTranscribe:
         instruments: list
     ) -> list:
         """ADTOF model inference"""
-        # TODO: Implement actual ADTOF inference
-        # Reference: https://github.com/MZehren/ADTOF
-        #
-        # ADTOF uses a CRNN architecture:
-        # 1. Compute mel spectrogram
-        # 2. Run through CNN encoder
-        # 3. Run through RNN for temporal modeling
-        # 4. Apply threshold to get onsets
-        #
-        # Example (pseudocode):
-        # mel = compute_mel_spectrogram(waveform, sample_rate)
-        # with torch.no_grad():
-        #     activations = model_obj(mel)
-        # onsets = peak_pick(activations, threshold=1-sensitivity)
+        from ..utils.adtof_integration import transcribe_adtof
         
-        if model_obj.get("_placeholder"):
-            raise NotImplementedError(
-                "ADTOF model integration pending. "
-                "Please download ADTOF model and place in models/drums2chart/"
+        # Check for placeholder (model load failed)
+        if isinstance(model_obj, dict) and model_obj.get("_placeholder"):
+            error_msg = model_obj.get("_error", "Unknown error")
+            raise RuntimeError(
+                f"ADTOF model not loaded: {error_msg}\n"
+                "Install with: pip install adtof-pytorch\n"
+                "Then place model weights (.pth) in ComfyUI/models/drums2chart/"
             )
         
-        return []
+        # Get device
+        device = next(model_obj.parameters()).device
+        
+        # Run transcription
+        try:
+            events = transcribe_adtof(
+                model_obj=model_obj,
+                config=config,
+                waveform=waveform,
+                sample_rate=sample_rate,
+                sensitivity=sensitivity,
+                device=str(device),
+            )
+            
+            # Filter by instrument if specified
+            if instruments and instruments != ["all"]:
+                events = [e for e in events if e["instrument"] in instruments]
+            
+            return events
+            
+        except Exception as e:
+            print(f"[Drums2Chart] ADTOF transcription failed: {e}")
+            raise
     
     def _transcribe_omnizart(
         self,

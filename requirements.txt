@@ -13,6 +13,11 @@ soundfile>=0.12.0
 midiutil>=1.2.1
 pretty_midi>=0.2.10
 
-# Drum transcription models
-# omnizart  # Optional: pip install omnizart for Omnizart model
-# Note: ADTOF requires manual setup from https://github.com/MZehren/ADTOF
+# Drum transcription - ADTOF (primary model)
+# Install from PyPI:
+#   pip install adtof-pytorch
+# Or from source:
+#   pip install git+https://github.com/xavriley/ADTOF-pytorch.git
+#
+# Note: Model weights are included with the package
+adtof-pytorch>=0.1.0
