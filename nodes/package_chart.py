@@ -115,8 +115,9 @@ class PackageYARGChart:
         Returns:
             Tuple of (output_folder_path, song_ini_content)
         """
-        import soundfile as sf
+        import scipy.io.wavfile as wavfile
         import numpy as np
+        import subprocess
         
         # Sanitize folder name
         safe_name = self._sanitize_filename(f"{artist} - {song_name}")
@@ -133,9 +134,9 @@ class PackageYARGChart:
         # Track which stems are included
         stems_included = []
         
-        # Helper to save audio with soundfile
+        # Helper to save audio
         def save_audio_ogg(filepath: str, audio_dict: dict):
-            """Save audio dict to OGG using soundfile"""
+            """Save audio dict to OGG via WAV + ffmpeg"""
             wav = audio_dict["waveform"].squeeze()  # Remove batch dim
             sr = audio_dict["sample_rate"]
             
@@ -143,13 +144,37 @@ class PackageYARGChart:
             if hasattr(wav, 'cpu'):
                 wav = wav.cpu().numpy()
             
-            # Ensure shape is [samples, channels] for soundfile
+            # Ensure shape is [channels, samples] then transpose for scipy
             if wav.ndim == 1:
-                wav = wav.reshape(-1, 1)  # Mono
-            elif wav.shape[0] in [1, 2]:
-                wav = wav.T  # [channels, samples] -> [samples, channels]
+                wav = wav.reshape(1, -1)  # [1, samples]
+            elif wav.shape[0] > wav.shape[1]:  # [samples, channels]
+                wav = wav.T
             
-            sf.write(filepath, wav, sr, format='OGG', subtype='VORBIS')
+            # Convert to int16 for WAV
+            wav = np.clip(wav, -1.0, 1.0)
+            wav_int16 = (wav * 32767).astype(np.int16)
+            
+            # Transpose to [samples, channels] for scipy
+            wav_int16 = wav_int16.T
+            
+            # Save as WAV first
+            wav_path = filepath.replace('.ogg', '.wav')
+            wavfile.write(wav_path, sr, wav_int16)
+            
+            # Convert to OGG using ffmpeg if available
+            try:
+                result = subprocess.run(
+                    ['ffmpeg', '-y', '-i', wav_path, '-c:a', 'libvorbis', '-q:a', '6', filepath],
+                    capture_output=True, timeout=120
+                )
+                if result.returncode == 0:
+                    os.remove(wav_path)  # Clean up WAV
+                else:
+                    # ffmpeg failed, rename WAV to final path
+                    print(f"[Drums2Chart] ffmpeg failed, keeping WAV: {wav_path}")
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                # ffmpeg not available, just keep WAV
+                print(f"[Drums2Chart] ffmpeg not found, saved as WAV: {wav_path}")
         
         # Build song.ini
         song_ini = self._build_song_ini(
