@@ -149,12 +149,23 @@ def transcribe_adtof(
     # Convert to numpy for audio processor
     audio_np = waveform.squeeze().cpu().numpy()
     
-    # Process audio to mel spectrogram
+    # Ensure mono and 1D
+    if audio_np.ndim > 1:
+        audio_np = audio_np.mean(axis=0)
+    
+    # Create processor and compute spectrogram using its methods
     processor = create_adtof_processor()
-    mel_spec = processor(audio_np)  # Returns [time, freq_bins]
+    
+    # The processor has compute_stft and apply_filterbank methods
+    # process_audio takes a file path, but we have raw audio, so use the components directly
+    stft = processor.compute_stft(audio_np)  # [freq_bins, time]
+    filtered = processor.apply_filterbank(stft)  # [n_bins, time]
+    
+    # Transpose to [time, freq_bins] and add channel dim for model
+    mel_spec = filtered.T[:, :, np.newaxis]  # [time, freq_bins, 1]
     
     # Add batch dim and convert to tensor
-    x = torch.from_numpy(mel_spec).unsqueeze(0).to(device)  # [1, time, freq_bins]
+    x = torch.from_numpy(mel_spec).unsqueeze(0).float().to(device)  # [1, time, freq_bins, 1]
     
     # Run model
     with torch.no_grad():
