@@ -5,7 +5,7 @@ Core nodes for the drum transcription → chart generation pipeline.
 """
 
 from .load_drum_model import LoadDrumModel, UnloadDrumModel
-from .drum_isolate import DrumIsolate, DrumIsolateSimple
+from .stem_isolate import StemIsolate, StemIsolateSimple
 from .drum_transcribe import DrumTranscribe
 from .drum_mapping import DrumMapping, DrumMappingPreset
 from .preview_chart import PreviewChart, PreviewChartAnimated
@@ -16,9 +16,9 @@ NODE_CLASS_MAPPINGS = {
     # Model management
     "LoadDrumModel": LoadDrumModel,
     "UnloadDrumModel": UnloadDrumModel,
-    # Isolation
-    "DrumIsolate": DrumIsolate,
-    "DrumIsolateSimple": DrumIsolateSimple,
+    # Stem separation
+    "StemIsolate": StemIsolate,
+    "StemIsolateSimple": StemIsolateSimple,
     # Transcription
     "DrumTranscribe": DrumTranscribe,
     # Mapping (customize note → lane assignment)
@@ -35,8 +35,8 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "LoadDrumModel": "🎚️ Load Drum Model",
     "UnloadDrumModel": "🗑️ Unload Drum Model",
-    "DrumIsolate": "🎛️ Drum Isolate (Demucs)",
-    "DrumIsolateSimple": "🥁 Drum Isolate (Simple)",
+    "StemIsolate": "🎛️ Stem Isolate (Demucs)",
+    "StemIsolateSimple": "🥁 Stem Isolate (Simple)",
     "DrumTranscribe": "🥁 Drum Transcribe",
     "DrumMapping": "🎯 Drum Mapping",
     "DrumMappingPreset": "🎯 Drum Mapping (Preset)",
