@@ -28,7 +28,7 @@ class PackageYARGChart:
         return {
             "required": {
                 "chart": ("CHART_DATA",),
-                "audio": ("AUDIO",),
+                "audio": ("AUDIO",),  # Full mix (song.ogg)
                 "song_name": ("STRING", {
                     "default": "Unknown Song",
                     "tooltip": "Song title"
@@ -43,17 +43,31 @@ class PackageYARGChart:
                 }),
             },
             "optional": {
+                # Metadata
                 "album": ("STRING", {"default": "Unknown Album"}),
                 "year": ("STRING", {"default": "2026"}),
                 "genre": ("STRING", {"default": "Rock"}),
                 "charter": ("STRING", {"default": "Drums2Chart AI"}),
-                "drums_audio": ("AUDIO",),  # Isolated drums stem
+                
+                # Stems - all optional, will be saved if provided
+                "drums_stem": ("AUDIO",),      # drums.ogg
+                "bass_stem": ("AUDIO",),       # bass.ogg
+                "guitar_stem": ("AUDIO",),     # guitar.ogg (from "other" stem)
+                "vocals_stem": ("AUDIO",),     # vocals.ogg
+                "keys_stem": ("AUDIO",),       # keys.ogg
+                "backing_stem": ("AUDIO",),    # backing.ogg (everything minus drums)
+                
+                # Additional options
                 "album_art": ("IMAGE",),
                 "preview_start_ms": ("INT", {
                     "default": 0,
                     "min": 0,
                     "max": 600000,
                     "tooltip": "Preview start time in milliseconds"
+                }),
+                "include_stems": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Include stem files in output (if provided)"
                 }),
             }
         }
@@ -85,9 +99,15 @@ class PackageYARGChart:
         year: str = "2026",
         genre: str = "Rock",
         charter: str = "Drums2Chart AI",
-        drums_audio: Dict[str, Any] = None,
+        drums_stem: Dict[str, Any] = None,
+        bass_stem: Dict[str, Any] = None,
+        guitar_stem: Dict[str, Any] = None,
+        vocals_stem: Dict[str, Any] = None,
+        keys_stem: Dict[str, Any] = None,
+        backing_stem: Dict[str, Any] = None,
         album_art=None,
         preview_start_ms: int = 0,
+        include_stems: bool = True,
     ) -> Tuple[str, str]:
         """
         Package all components into song folder.
@@ -108,6 +128,9 @@ class PackageYARGChart:
         waveform = audio["waveform"]
         sample_rate = audio["sample_rate"]
         song_length_ms = int((waveform.shape[-1] / sample_rate) * 1000)
+        
+        # Track which stems are included
+        stems_included = []
         
         # Build song.ini
         song_ini = self._build_song_ini(
@@ -132,7 +155,7 @@ class PackageYARGChart:
         with open(chart_path, "w", encoding="utf-8") as f:
             f.write(chart["text"])
         
-        # Save audio as OGG
+        # Save main audio as OGG
         audio_path = os.path.join(folder_path, "song.ogg")
         torchaudio.save(
             audio_path,
@@ -141,20 +164,61 @@ class PackageYARGChart:
             format="ogg",
         )
         
-        # Optional: Save drums stem
-        if drums_audio is not None:
-            drums_path = os.path.join(folder_path, "drums.ogg")
-            torchaudio.save(
-                drums_path,
-                drums_audio["waveform"].squeeze(0),
-                drums_audio["sample_rate"],
-                format="ogg",
-            )
+        # Save stems if provided and requested
+        if include_stems:
+            stems = {
+                "drums.ogg": drums_stem,
+                "bass.ogg": bass_stem,
+                "guitar.ogg": guitar_stem,
+                "vocals.ogg": vocals_stem,
+                "keys.ogg": keys_stem,
+                "backing.ogg": backing_stem,
+            }
+            
+            for filename, stem_audio in stems.items():
+                if stem_audio is not None:
+                    stem_path = os.path.join(folder_path, filename)
+                    torchaudio.save(
+                        stem_path,
+                        stem_audio["waveform"].squeeze(0),
+                        stem_audio["sample_rate"],
+                        format="ogg",
+                    )
+                    stems_included.append(filename)
+                    print(f"[Drums2Chart] Saved stem: {filename}")
         
-        # Optional: Save album art
+        # Save album art
         if album_art is not None:
-            # TODO: Convert tensor to PNG and save
-            pass
+            try:
+                from PIL import Image
+                import numpy as np
+                
+                # Convert tensor to PIL Image
+                if hasattr(album_art, 'cpu'):
+                    img_np = album_art.cpu().numpy()
+                else:
+                    img_np = np.array(album_art)
+                
+                # Handle different formats
+                if img_np.ndim == 4:
+                    img_np = img_np[0]  # Remove batch
+                if img_np.shape[0] in [1, 3, 4]:  # CHW format
+                    img_np = np.transpose(img_np, (1, 2, 0))
+                
+                # Scale to 0-255 if needed
+                if img_np.max() <= 1.0:
+                    img_np = (img_np * 255).astype(np.uint8)
+                
+                img = Image.fromarray(img_np)
+                art_path = os.path.join(folder_path, "album.png")
+                img.save(art_path)
+                print(f"[Drums2Chart] Saved album art")
+            except Exception as e:
+                print(f"[Drums2Chart] Could not save album art: {e}")
+        
+        print(f"[Drums2Chart] Chart packaged to: {folder_path}")
+        if stems_included:
+            print(f"[Drums2Chart] Stems: {', '.join(stems_included)}")
         
         return (folder_path, song_ini)
     
