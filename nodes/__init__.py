@@ -8,6 +8,7 @@ from .load_drum_model import LoadDrumModel, UnloadDrumModel
 from .drum_isolate import DrumIsolate, DrumIsolateSimple
 from .drum_transcribe import DrumTranscribe
 from .drum_mapping import DrumMapping, DrumMappingPreset
+from .preview_chart import PreviewChart, PreviewChartAnimated
 from .midi_to_chart import MIDIToChart
 from .package_chart import PackageYARGChart
 
@@ -23,6 +24,9 @@ NODE_CLASS_MAPPINGS = {
     # Mapping (customize note → lane assignment)
     "DrumMapping": DrumMapping,
     "DrumMappingPreset": DrumMappingPreset,
+    # Preview
+    "PreviewChart": PreviewChart,
+    "PreviewChartAnimated": PreviewChartAnimated,
     # Charting & packaging
     "MIDIToChart": MIDIToChart,
     "PackageYARGChart": PackageYARGChart,
@@ -36,6 +40,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "DrumTranscribe": "🥁 Drum Transcribe",
     "DrumMapping": "🎯 Drum Mapping",
     "DrumMappingPreset": "🎯 Drum Mapping (Preset)",
+    "PreviewChart": "👁️ Preview Chart",
+    "PreviewChartAnimated": "🎬 Preview Chart (Animated)",
     "MIDIToChart": "📝 MIDI → Chart",
     "PackageYARGChart": "📦 Package YARG Chart",
 }
