@@ -135,7 +135,14 @@ class DrumTranscribe:
         # Filter by velocity
         events = [e for e in events if e["velocity"] >= velocity_threshold]
         
+        # Count by instrument for debugging
+        instrument_counts = {}
+        for e in events:
+            inst = e.get("instrument", "unknown")
+            instrument_counts[inst] = instrument_counts.get(inst, 0) + 1
+        
         print(f"[Drums2Chart] Detected {len(events)} drum hits")
+        print(f"[Drums2Chart] Breakdown: {instrument_counts}")
         
         # Convert to MIDI data structure
         midi_data = self._events_to_midi(events, sample_rate)
