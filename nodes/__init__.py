@@ -8,6 +8,7 @@ from .load_drum_model import LoadDrumModel, UnloadDrumModel
 from .stem_isolate import StemIsolate, StemIsolateSimple
 from .drum_transcribe import DrumTranscribe
 from .drum_mapping import DrumMapping, DrumMappingPreset
+from .drum_refine import DrumRefine
 from .preview_chart import PreviewChart, PreviewChartAnimated
 from .midi_to_chart import MIDIToChart
 from .package_chart import PackageYARGChart
@@ -21,6 +22,8 @@ NODE_CLASS_MAPPINGS = {
     "StemIsolateSimple": StemIsolateSimple,
     # Transcription
     "DrumTranscribe": DrumTranscribe,
+    # Refinement (5-class → 7-class expansion)
+    "DrumRefine": DrumRefine,
     # Mapping (customize note → lane assignment)
     "DrumMapping": DrumMapping,
     "DrumMappingPreset": DrumMappingPreset,
@@ -38,6 +41,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "StemIsolate": "🎛️ Stem Isolate (Demucs)",
     "StemIsolateSimple": "🥁 Stem Isolate (Simple)",
     "DrumTranscribe": "🥁 Drum Transcribe",
+    "DrumRefine": "✨ Drum Refine (7-class)",
     "DrumMapping": "🎯 Drum Mapping",
     "DrumMappingPreset": "🎯 Drum Mapping (Preset)",
     "PreviewChart": "👁️ Preview Chart",
