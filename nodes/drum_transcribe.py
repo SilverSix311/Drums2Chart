@@ -50,8 +50,8 @@ class DrumTranscribe:
                     "tooltip": "Minimum MIDI velocity to include (filters quiet ghost notes)"
                 }),
                 "instruments": ("STRING", {
-                    "default": "kick,snare,hihat,tom,cymbal",
-                    "tooltip": "Comma-separated list of instruments to detect (model-dependent)"
+                    "default": "kick,snare,hihat,hihat_closed,hihat_open,tom,cymbal,crash,ride",
+                    "tooltip": "Comma-separated list of instruments to detect (ADTOF outputs: kick, snare, tom, hihat_closed, crash)"
                 }),
             }
         }
