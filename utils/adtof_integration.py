@@ -207,13 +207,11 @@ def transcribe_adtof(
     # Convert to event list
     events = []
     print(f"[ADTOF] Converting peaks to events...")
-    print(f"[ADTOF] INSTRUMENT_NAMES keys: {list(INSTRUMENT_NAMES.keys())}")
     for midi_note, times in peaks_dict.items():
-        print(f"[ADTOF] Processing midi_note={midi_note} (type={type(midi_note).__name__}), {len(times)} times")
         instrument = INSTRUMENT_NAMES.get(midi_note, f"unknown_{midi_note}")
-        print(f"[ADTOF]   -> instrument={instrument}")
         gm_note = ADTOF_TO_GM.get(midi_note, midi_note)
         
+        events_before = len(events)
         for time_sec in times:
             # Estimate velocity from activation strength at that time
             frame_idx = int(time_sec * fps)
@@ -232,6 +230,9 @@ def transcribe_adtof(
                 "midi_note": gm_note,
                 "confidence": float(activation_value) if frame_idx < activations.shape[1] else 0.5,
             })
+        
+        events_added = len(events) - events_before
+        print(f"[ADTOF] {instrument}: {events_added} events created (expected {len(times)})")
     
     # Sort by time
     events.sort(key=lambda e: e["time_seconds"])
