@@ -181,10 +181,21 @@ def transcribe_adtof(
         for t in base_thresholds
     ]
     
+    # Debug: show activation stats per class
+    labels = config.get("labels", LABELS_5)
+    print(f"[ADTOF] Activation shape: {activations.shape}")
+    print(f"[ADTOF] Thresholds (adjusted): {adjusted_thresholds}")
+    for i, (label, thresh) in enumerate(zip(labels, adjusted_thresholds)):
+        class_act = activations[0, :, i]
+        inst_name = INSTRUMENT_NAMES.get(label, f"class_{i}")
+        max_act = float(np.max(class_act))
+        mean_act = float(np.mean(class_act))
+        above_thresh = int(np.sum(class_act > thresh))
+        print(f"[ADTOF] {inst_name}: max={max_act:.3f}, mean={mean_act:.4f}, above_thresh={above_thresh}, thresh={thresh:.3f}")
+    
     # Peak picking
     fps = config.get("fps", 100)
     picker = PeakPicker(thresholds=adjusted_thresholds, fps=fps)
-    labels = config.get("labels", LABELS_5)
     peaks_dict_list = picker.pick(activations, labels=labels, label_offset=0)
     peaks_dict = peaks_dict_list[0]  # First (and only) batch item
     
