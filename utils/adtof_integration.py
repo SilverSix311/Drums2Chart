@@ -199,6 +199,11 @@ def transcribe_adtof(
     peaks_dict_list = picker.pick(activations, labels=labels, label_offset=0)
     peaks_dict = peaks_dict_list[0]  # First (and only) batch item
     
+    # Debug: show what keys are in peaks_dict
+    print(f"[ADTOF] peaks_dict keys: {list(peaks_dict.keys())}")
+    for key, times in peaks_dict.items():
+        print(f"[ADTOF]   key={key} ({type(key).__name__}): {len(times)} peaks")
+    
     # Convert to event list
     events = []
     for midi_note, times in peaks_dict.items():
