@@ -208,15 +208,21 @@ class MIDIToChart:
             time_beats = time_seconds / seconds_per_beat
             tick = int(time_beats * target_resolution)
             
-            # Map MIDI note to chart lane
-            midi_note = event["note"]
-            mapping = self.MIDI_TO_CHART.get(midi_note)
-            
-            if mapping is None:
-                continue  # Unknown drum, skip
-            
-            lane = mapping["lane"]
-            is_cymbal = mapping.get("cymbal", False) if use_cymbal_heuristic else False
+            # Check if event already has lane mapping (from DrumMapping node)
+            if "chart_lane" in event or "is_cymbal" in event:
+                # Use pre-computed mapping from DrumMapping
+                lane = event.get("chart_lane", event.get("chart_lane_num", 1))
+                is_cymbal = event.get("is_cymbal", False) if use_cymbal_heuristic else False
+            else:
+                # Fallback: Map MIDI note to chart lane
+                midi_note = event["note"]
+                mapping = self.MIDI_TO_CHART.get(midi_note)
+                
+                if mapping is None:
+                    continue  # Unknown drum, skip
+                
+                lane = mapping["lane"]
+                is_cymbal = mapping.get("cymbal", False) if use_cymbal_heuristic else False
             
             # Chart format: tick = N lane 0
             # For cymbals, lane number + 64 in some interpretations
@@ -225,8 +231,8 @@ class MIDIToChart:
             note_value = lane
             lines.append(f"  {tick} = N {note_value} 0")
             
-            # Add cymbal marker if applicable
-            if is_cymbal and lane >= 2:  # Yellow, Blue, Green can be cymbals
+            # Add cymbal marker if applicable (yellow=2, blue=3, green=4)
+            if is_cymbal and lane >= 2:
                 lines.append(f"  {tick} = N {lane + 64} 0")
         
         # Sort by tick
