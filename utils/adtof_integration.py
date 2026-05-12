@@ -206,8 +206,12 @@ def transcribe_adtof(
     
     # Convert to event list
     events = []
+    print(f"[ADTOF] Converting peaks to events...")
+    print(f"[ADTOF] INSTRUMENT_NAMES keys: {list(INSTRUMENT_NAMES.keys())}")
     for midi_note, times in peaks_dict.items():
+        print(f"[ADTOF] Processing midi_note={midi_note} (type={type(midi_note).__name__}), {len(times)} times")
         instrument = INSTRUMENT_NAMES.get(midi_note, f"unknown_{midi_note}")
+        print(f"[ADTOF]   -> instrument={instrument}")
         gm_note = ADTOF_TO_GM.get(midi_note, midi_note)
         
         for time_sec in times:
