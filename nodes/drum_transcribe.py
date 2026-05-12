@@ -123,6 +123,8 @@ class DrumTranscribe:
         
         if model_type == "adtof":
             events = self._transcribe_adtof(model_obj, model_config, waveform, sample_rate, sensitivity, instrument_list)
+        elif model_type == "oaf_drums":
+            events = self._transcribe_oaf_drums(model_obj, model_config, waveform, sample_rate, sensitivity, instrument_list)
         elif model_type == "omnizart":
             events = self._transcribe_omnizart(model_obj, model_config, waveform, sample_rate, sensitivity, instrument_list)
         elif model_type == "onsets_frames":
@@ -198,6 +200,49 @@ class DrumTranscribe:
             
         except Exception as e:
             print(f"[Drums2Chart] ADTOF transcription failed: {e}")
+            raise
+    
+    def _transcribe_oaf_drums(
+        self,
+        model_obj: Any,
+        config: Dict,
+        waveform: torch.Tensor,
+        sample_rate: int,
+        sensitivity: float,
+        instruments: list
+    ) -> list:
+        """Onsets & Frames Drums (E-GMD) inference"""
+        from ..utils.oaf_drums_integration import transcribe_oaf_drums
+        
+        if isinstance(model_obj, dict) and model_obj.get("_placeholder"):
+            error_msg = model_obj.get("_error", "Unknown error")
+            raise RuntimeError(
+                f"OaF Drums model not loaded: {error_msg}\n"
+                "Install with: pip install magenta\n"
+                "Model checkpoint will be downloaded automatically."
+            )
+        
+        try:
+            # OaF uses sensitivity as onset_threshold (inverted: higher sensitivity = lower threshold)
+            onset_threshold = 1.0 - sensitivity
+            frame_threshold = 1.0 - sensitivity
+            
+            events = transcribe_oaf_drums(
+                model_dict=model_obj,
+                waveform=waveform,
+                sample_rate=sample_rate,
+                onset_threshold=onset_threshold,
+                frame_threshold=frame_threshold,
+            )
+            
+            # Filter by instrument if specified
+            if instruments and instruments != ["all"]:
+                events = [e for e in events if e["instrument"] in instruments]
+            
+            return events
+            
+        except Exception as e:
+            print(f"[Drums2Chart] OaF Drums transcription failed: {e}")
             raise
     
     def _transcribe_omnizart(

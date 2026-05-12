@@ -124,20 +124,33 @@ class DrumMapping:
     ) -> Tuple[Dict, List]:
         """Apply custom mapping to drum events"""
         
-        # Build mapping table
+        # Build mapping table (covers both ADTOF and OaF Drums outputs)
         mapping = {
+            # Kick
             "kick": {"lane": kick_lane, "cymbal": False},
+            
+            # Snare variants
             "snare": {"lane": snare_lane, "cymbal": False},
+            "snare_rimshot": {"lane": snare_lane, "cymbal": False},
+            "snare_xstick": {"lane": snare_lane, "cymbal": False},
+            
+            # Hi-hat variants
             "hihat_closed": {"lane": hihat_lane, "cymbal": hihat_is_cymbal},
             "hihat_open": {"lane": hihat_lane, "cymbal": hihat_is_cymbal},
             "hihat_pedal": {"lane": "orange_hihat_pedal", "cymbal": False},
+            
+            # Tom variants (OaF gives us individual toms!)
             "tom": {"lane": tom_mid_lane, "cymbal": toms_are_cymbals},  # Generic tom
             "tom_high": {"lane": tom_high_lane, "cymbal": toms_are_cymbals},
             "tom_mid": {"lane": tom_mid_lane, "cymbal": toms_are_cymbals},
             "tom_low": {"lane": tom_low_lane, "cymbal": toms_are_cymbals},
             "tom_floor": {"lane": tom_floor_lane, "cymbal": toms_are_cymbals},
+            
+            # Cymbal variants
             "crash": {"lane": crash_lane, "cymbal": crash_is_cymbal},
+            "crash_2": {"lane": crash_lane, "cymbal": crash_is_cymbal},
             "ride": {"lane": ride_lane, "cymbal": ride_is_cymbal},
+            "ride_2": {"lane": ride_lane, "cymbal": ride_is_cymbal},
             "ride_bell": {"lane": ride_lane, "cymbal": ride_is_cymbal},
             "china": {"lane": crash_lane, "cymbal": True},
             "splash": {"lane": crash_lane, "cymbal": True},

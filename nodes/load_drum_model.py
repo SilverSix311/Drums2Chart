@@ -35,7 +35,7 @@ class LoadDrumModel:
     Models are loaded once and cached, then passed to DrumTranscribe for inference.
     """
     
-    MODEL_TYPES = ["auto", "adtof", "omnizart", "onsets_frames", "onnx_generic"]
+    MODEL_TYPES = ["auto", "adtof", "oaf_drums", "omnizart", "onsets_frames", "onnx_generic"]
     
     @classmethod
     def INPUT_TYPES(cls) -> Dict[str, Any]:
@@ -152,6 +152,8 @@ class LoadDrumModel:
         # Load based on type
         if model_type == "adtof":
             model_obj, config = self._load_adtof(model_path, device, precision)
+        elif model_type == "oaf_drums":
+            model_obj, config = self._load_oaf_drums(model_path, device, precision)
         elif model_type == "omnizart":
             model_obj, config = self._load_omnizart(model_path, device, precision)
         elif model_type == "onsets_frames":
@@ -185,6 +187,8 @@ class LoadDrumModel:
         
         if "adtof" in filename_lower:
             return "adtof"
+        elif "oaf" in filename_lower or "egmd" in filename_lower:
+            return "oaf_drums"
         elif "omnizart" in filename_lower:
             return "omnizart"
         elif "onsets" in filename_lower or "frames" in filename_lower or "magenta" in filename_lower:
@@ -232,6 +236,48 @@ class LoadDrumModel:
             
             model = {"_placeholder": True, "type": "adtof", "path": path, "_error": str(e)}
             
+            return model, config
+    
+    def _load_oaf_drums(self, path: str, device: str, precision: str) -> Tuple[Any, Dict]:
+        """Load Onsets & Frames Drums (E-GMD) model"""
+        from ..utils.oaf_drums_integration import load_oaf_drums_model, check_magenta_available, EGMD_DRUM_MAPPING
+        
+        if not check_magenta_available():
+            print("[Drums2Chart] Magenta not available")
+            print("[Drums2Chart] Install with: pip install magenta")
+            
+            config = {
+                "sample_rate": 16000,
+                "instruments": list(EGMD_DRUM_MAPPING.values()),
+                "_error": "Magenta not installed",
+            }
+            model = {"_placeholder": True, "type": "oaf_drums", "path": path, "_error": "Magenta not installed"}
+            return model, config
+        
+        try:
+            result = load_oaf_drums_model(
+                checkpoint_path=path if path and not path.endswith(".pth") else None,
+                model_dir=os.path.dirname(path) if path else DRUMS2CHART_MODELS_DIR,
+                device=device,
+            )
+            
+            config = {
+                "sample_rate": result["sample_rate"],
+                "instruments": list(result["drum_mapping"].values()),
+                "drum_mapping": result["drum_mapping"],
+                "hparams": result.get("hparams"),
+            }
+            
+            return result, config
+            
+        except Exception as e:
+            print(f"[Drums2Chart] OaF Drums load failed: {e}")
+            config = {
+                "sample_rate": 16000,
+                "instruments": list(EGMD_DRUM_MAPPING.values()),
+                "_error": str(e),
+            }
+            model = {"_placeholder": True, "type": "oaf_drums", "path": path, "_error": str(e)}
             return model, config
     
     def _load_omnizart(self, path: str, device: str, precision: str) -> Tuple[Any, Dict]:
